@@ -16,30 +16,36 @@
  *
  */
 
-'use strict';
+"use strict";
 
-var path = require('path');
-var fs = require('fs');
-var util = require('util');
+var path = require("path");
+var fs = require("fs");
+var util = require("util");
 
-var SSL_ROOTS_PATH = path.resolve(__dirname, 'deps', 'grpc', 'etc', 'roots.pem');
+var SSL_ROOTS_PATH = path.resolve(
+  __dirname,
+  "deps",
+  "grpc",
+  "etc",
+  "roots.pem"
+);
 
-var client = require('./src/client.js');
+var client = require("./src/client.js");
 
-var server = require('./src/server.js');
+var server = require("./src/server.js");
 
-var common = require('./src/common.js');
+var common = require("./src/common.js");
 
-var Metadata = require('./src/metadata.js');
+var Metadata = require("./src/metadata.js");
 
-var grpc = require('./src/grpc_extension');
+var grpc = require("./src/grpc_extension");
 
-var protobuf_js_5_common = require('./src/protobuf_js_5_common');
-var protobuf_js_6_common = require('./src/protobuf_js_6_common');
+var protobuf_js_5_common = require("./src/protobuf_js_5_common");
+var protobuf_js_6_common = require("./src/protobuf_js_6_common");
 
-var constants = require('./src/constants.js');
+var constants = require("./src/constants.js");
 
-grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
+grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, "ascii"));
 
 /**
  * @namespace grpc
@@ -69,27 +75,29 @@ grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
  */
 exports.loadObject = function loadObject(value, options) {
   options = Object.assign({}, common.defaultGrpcOptions, options);
-  options = Object.assign({}, {'protobufjsVersion': 'detect'}, options);
+  options = Object.assign({}, { protobufjsVersion: "detect" }, options);
   var protobufjsVersion;
-  if (options.protobufjsVersion === 'detect') {
+  if (options.protobufjsVersion === "detect") {
     if (protobuf_js_6_common.isProbablyProtobufJs6(value)) {
       protobufjsVersion = 6;
     } else if (protobuf_js_5_common.isProbablyProtobufJs5(value)) {
       protobufjsVersion = 5;
     } else {
-      var error_message = 'Could not detect ProtoBuf.js version. Please ' +
-          'specify the version number with the "protobufjsVersion" option';
+      var error_message =
+        "Could not detect ProtoBuf.js version. Please " +
+        'specify the version number with the "protobufjsVersion" option';
       throw new Error(error_message);
     }
   } else {
     protobufjsVersion = options.protobufjsVersion;
   }
   switch (protobufjsVersion) {
-    case 6: return protobuf_js_6_common.loadObject(value, options);
+    case 6:
+      return protobuf_js_6_common.loadObject(value, options);
     case 5:
-    return protobuf_js_5_common.loadObject(value, options);
+      return protobuf_js_5_common.loadObject(value, options);
     default:
-    throw new Error('Unrecognized protobufjsVersion', protobufjsVersion);
+      throw new Error("Unrecognized protobufjsVersion", protobufjsVersion);
   }
 };
 
@@ -118,27 +126,27 @@ var loadObject = exports.loadObject;
  * @return {Object<string, *>} The resulting gRPC object
  */
 exports.load = util.deprecate(function load(filename, format, options) {
-  const ProtoBuf = require('protobufjs');
+  const ProtoBuf = require("protobufjs");
   options = Object.assign({}, common.defaultGrpcOptions, options);
   options.protobufjsVersion = 5;
   if (!format) {
-    format = 'proto';
+    format = "proto";
   }
   var convertFieldsToCamelCaseOriginal = ProtoBuf.convertFieldsToCamelCase;
-  if(options && options.hasOwnProperty('convertFieldsToCamelCase')) {
+  if (options && options.hasOwnProperty("convertFieldsToCamelCase")) {
     ProtoBuf.convertFieldsToCamelCase = options.convertFieldsToCamelCase;
   }
   var builder;
   try {
-    switch(format) {
-      case 'proto':
-      builder = ProtoBuf.loadProtoFile(filename);
-      break;
-      case 'json':
-      builder = ProtoBuf.loadJsonFile(filename);
-      break;
+    switch (format) {
+      case "proto":
+        builder = ProtoBuf.loadProtoFile(filename);
+        break;
+      case "json":
+        builder = ProtoBuf.loadJsonFile(filename);
+        break;
       default:
-      throw new Error('Unrecognized format "' + format + '"');
+        throw new Error('Unrecognized format "' + format + '"');
     }
   } finally {
     ProtoBuf.convertFieldsToCamelCase = convertFieldsToCamelCaseOriginal;
@@ -149,7 +157,7 @@ exports.load = util.deprecate(function load(filename, format, options) {
   }
 
   return loadObject(builder.ns, options);
-}, 'grpc.load: Use the @grpc/proto-loader module with grpc.loadPackageDefinition instead');
+}, "grpc.load: Use the @grpc/proto-loader module with grpc.loadPackageDefinition instead");
 
 /**
  * Load a gRPC package definition as a gRPC object hierarchy
@@ -160,8 +168,8 @@ exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
   const result = {};
   for (const serviceFqn in packageDef) {
     const service = packageDef[serviceFqn];
-    const nameComponents = serviceFqn.split('.');
-    const serviceName = nameComponents[nameComponents.length-1];
+    const nameComponents = serviceFqn.split(".");
+    const serviceName = nameComponents[nameComponents.length - 1];
     let current = result;
     for (const packageName of nameComponents.slice(0, -1)) {
       if (!current[packageName]) {
@@ -169,10 +177,14 @@ exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
       }
       current = current[packageName];
     }
-    if (service.hasOwnProperty('format')) {
+    if (service.hasOwnProperty("format")) {
       current[serviceName] = service;
     } else {
-      current[serviceName] = client.makeClientConstructor(service, serviceName, {});
+      current[serviceName] = client.makeClientConstructor(
+        service,
+        serviceName,
+        {}
+      );
     }
   }
   return result;
@@ -199,15 +211,22 @@ var log_template = function(args) {
  */
 exports.setLogger = function setLogger(logger) {
   common.logger = logger;
-  grpc.setDefaultLoggerCallback(function(file, line, severity,
-                                         message, timestamp) {
-    logger.error(log_template({
-      file: path.basename(file),
-      line: line,
-      severity: severity,
-      message: message,
-      timestamp: timestamp.toISOString()
-    }));
+  grpc.setDefaultLoggerCallback(function(
+    file,
+    line,
+    severity,
+    message,
+    timestamp
+  ) {
+    logger.error(
+      log_template({
+        file: path.basename(file),
+        line: line,
+        severity: severity,
+        message: message,
+        timestamp: timestamp.toISOString()
+      })
+    );
   });
 };
 
@@ -241,7 +260,7 @@ exports.methodTypes = constants.methodTypes;
 
 exports.connectivityState = constants.connectivityState;
 
-exports.credentials = require('./src/credentials.js');
+exports.credentials = require("./src/credentials.js");
 
 /**
  * ServerCredentials factories

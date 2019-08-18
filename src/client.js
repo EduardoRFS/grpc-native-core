@@ -30,27 +30,27 @@
  * var call = client.unaryMethod(arguments, callback);
  */
 
-'use strict';
+"use strict";
 
-var client_interceptors = require('./client_interceptors');
-var grpc = require('./grpc_extension');
+var client_interceptors = require("./client_interceptors");
+var grpc = require("./grpc_extension");
 
-var common = require('./common');
+var common = require("./common");
 
-var Metadata = require('./metadata');
+var Metadata = require("./metadata");
 
-var constants = require('./constants');
+var constants = require("./constants");
 
-var EventEmitter = require('events').EventEmitter;
+var EventEmitter = require("events").EventEmitter;
 
-var stream = require('stream');
+var stream = require("stream");
 
 var Readable = stream.Readable;
 var Writable = stream.Writable;
 var Duplex = stream.Duplex;
 var methodTypes = constants.methodTypes;
-var util = require('util');
-var version = require('../package.json').version;
+var util = require("util");
+var version = require("../package.json").version;
 
 /**
  * Initial response metadata sent by the server when it starts processing the
@@ -95,10 +95,10 @@ util.inherits(ClientWritableStream, Writable);
  *     an interceptor stack.
  */
 function ClientWritableStream(call) {
-  Writable.call(this, {objectMode: true});
+  Writable.call(this, { objectMode: true });
   this.call = call;
   var self = this;
-  this.on('finish', function() {
+  this.on("finish", function() {
     self.call.halfClose();
   });
 }
@@ -168,7 +168,7 @@ util.inherits(ClientReadableStream, Readable);
  *     an interceptor stack.
  */
 function ClientReadableStream(call) {
-  Readable.call(this, {objectMode: true});
+  Readable.call(this, { objectMode: true });
   this.call = call;
   this.finished = false;
   this.reading = false;
@@ -189,7 +189,7 @@ function ClientReadableStream(call) {
 function _readsDone(status) {
   /* jshint validthis: true */
   if (!status) {
-    status = {code: constants.status.OK, details: 'OK'};
+    status = { code: constants.status.OK, details: "OK" };
   }
   if (status.code !== constants.status.OK) {
     this.call.cancelWithStatus(status.code, status.details);
@@ -231,9 +231,9 @@ function _emitStatusIfDone() {
       this.push(null);
     } else {
       var error = common.createStatusError(status);
-      this.emit('error', error);
+      this.emit("error", error);
     }
-    this.emit('status', status);
+    this.emit("status", status);
   }
 }
 
@@ -279,7 +279,7 @@ util.inherits(ClientDuplexStream, Duplex);
  *     an interceptor stack.
  */
 function ClientDuplexStream(call) {
-  Duplex.call(this, {objectMode: true});
+  Duplex.call(this, { objectMode: true });
   this.call = call;
   /* Status generated from reading messages from the server. Overrides the
    * status from the server if not OK */
@@ -287,7 +287,7 @@ function ClientDuplexStream(call) {
   /* Status received from the server. */
   this.received_status = null;
   var self = this;
-  this.on('finish', function() {
+  this.on("finish", function() {
     self.call.halfClose();
   });
 }
@@ -369,18 +369,27 @@ function Client(address, credentials, options) {
   }
 
   // Resolve interceptor options and assign interceptors to each method
-  if (Array.isArray(options.interceptor_providers) && Array.isArray(options.interceptors)) {
+  if (
+    Array.isArray(options.interceptor_providers) &&
+    Array.isArray(options.interceptors)
+  ) {
     throw new client_interceptors.InterceptorConfigurationError(
-      'Both interceptors and interceptor_providers were passed as options ' +
-      'to the client constructor. Only one of these is allowed.');
+      "Both interceptors and interceptor_providers were passed as options " +
+        "to the client constructor. Only one of these is allowed."
+    );
   }
   self.$interceptors = options.interceptors || [];
   self.$interceptor_providers = options.interceptor_providers || [];
   if (self.$method_definitions) {
     Object.keys(self.$method_definitions).forEach(method_name => {
       const method_definition = self.$method_definitions[method_name];
-      self[method_name].interceptors = client_interceptors
-        .resolveInterceptorProviders(self.$interceptor_providers, method_definition)
+      self[
+        method_name
+      ].interceptors = client_interceptors
+        .resolveInterceptorProviders(
+          self.$interceptor_providers,
+          method_definition
+        )
         .concat(self.$interceptors);
     });
   }
@@ -391,23 +400,32 @@ function Client(address, credentials, options) {
   let channelFactoryOverride = options.channelFactoryOverride;
   // Exclude channel options which have already been consumed
   const ignoredKeys = [
-    'interceptors', 'interceptor_providers', 'channelOverride',
-    'channelFactoryOverride', 'callInvocationTransformer'
+    "interceptors",
+    "interceptor_providers",
+    "channelOverride",
+    "channelFactoryOverride",
+    "callInvocationTransformer"
   ];
-  var channel_options = Object.getOwnPropertyNames(options)
-    .reduce((acc, key) => {
+  var channel_options = Object.getOwnPropertyNames(options).reduce(
+    (acc, key) => {
       if (ignoredKeys.indexOf(key) === -1) {
         acc[key] = options[key];
       }
       return acc;
-    }, {});
+    },
+    {}
+  );
   /* Private fields use $ as a prefix instead of _ because it is an invalid
    * prefix of a method name */
   if (channelOverride) {
     this.$channel = options.channelOverride;
   } else {
     if (channelFactoryOverride) {
-      this.$channel = channelFactoryOverride(address, credentials, channel_options);
+      this.$channel = channelFactoryOverride(
+        address,
+        credentials,
+        channel_options
+      );
     } else {
       this.$channel = new grpc.Channel(address, credentials, channel_options);
     }
@@ -416,20 +434,32 @@ function Client(address, credentials, options) {
 
 exports.Client = Client;
 
-Client.prototype.resolveCallInterceptors = function(method_definition, interceptors, interceptor_providers) {
+Client.prototype.resolveCallInterceptors = function(
+  method_definition,
+  interceptors,
+  interceptor_providers
+) {
   if (Array.isArray(interceptors) && Array.isArray(interceptor_providers)) {
     throw new client_interceptors.InterceptorConfigurationError(
-      'Both interceptors and interceptor_providers were passed as call ' +
-      'options. Only one of these is allowed.');
+      "Both interceptors and interceptor_providers were passed as call " +
+        "options. Only one of these is allowed."
+    );
   }
   if (Array.isArray(interceptors) || Array.isArray(interceptor_providers)) {
     interceptors = interceptors || [];
     interceptor_providers = interceptor_providers || [];
-    return client_interceptors.resolveInterceptorProviders(interceptor_providers, method_definition).concat(interceptors);
+    return client_interceptors
+      .resolveInterceptorProviders(interceptor_providers, method_definition)
+      .concat(interceptors);
   } else {
-    return client_interceptors.resolveInterceptorProviders(this.$interceptor_providers, method_definition).concat(this.$interceptors);
+    return client_interceptors
+      .resolveInterceptorProviders(
+        this.$interceptor_providers,
+        method_definition
+      )
+      .concat(this.$interceptors);
   }
-}
+};
 
 /**
  * @callback grpc.Client~requestCallback
@@ -454,10 +484,16 @@ Client.prototype.resolveCallInterceptors = function(method_definition, intercept
  *     for when the response is received
  * @return {grpc~ClientUnaryCall} An event emitter for stream related events
  */
-Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
-                                             argument, metadata, options,
-                                             callback) {
-  if (typeof options === 'function') {
+Client.prototype.makeUnaryRequest = function(
+  path,
+  serialize,
+  deserialize,
+  argument,
+  metadata,
+  options,
+  callback
+) {
+  if (typeof options === "function") {
     callback = options;
     if (metadata instanceof Metadata) {
       options = {};
@@ -465,10 +501,18 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
       options = metadata;
       metadata = new Metadata();
     }
-  } else if (typeof metadata === 'function') {
+  } else if (typeof metadata === "function") {
     callback = metadata;
     metadata = new Metadata();
     options = {};
+  }
+  if (!callback && !options) {
+    if (metadata instanceof Metadata) {
+      options = {};
+    } else {
+      options = metadata;
+      metadata = new Metadata();
+    }
   }
   if (!metadata) {
     metadata = new Metadata();
@@ -476,19 +520,17 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
   if (!options) {
     options = {};
   }
-  if (!((metadata instanceof Metadata) &&
-        (options instanceof Object) &&
-        (typeof callback === 'function'))) {
-    throw new Error('Argument mismatch in makeUnaryRequest');
+  if (!(metadata instanceof Metadata && options instanceof Object)) {
+    throw new Error("Argument mismatch in makeUnaryRequest");
   }
 
-  var method_definition = options.method_definition = {
+  var method_definition = (options.method_definition = {
     path: path,
     requestStream: false,
     responseStream: false,
     requestSerialize: serialize,
     responseDeserialize: deserialize
-  };
+  });
 
   metadata = metadata.clone();
 
@@ -517,26 +559,47 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
     callOptions.interceptor_providers
   );
 
-  var intercepting_call = client_interceptors.getInterceptingCall(
-    methodDefinition,
-    callOptions,
-    interceptors,
-    callProperties.channel,
-    callProperties.callback
-  );
-
   var emitter = callProperties.call;
-  emitter.call = intercepting_call;
 
-  var last_listener = client_interceptors.getLastListener(
-    methodDefinition,
-    emitter,
-    callProperties.callback
-  );
+  var promise = new Promise((resolve, reject) => {
+    var promise_callback = function(err, data) {
+      if (typeof callProperties.callback === "function") {
+        callProperties.callback.apply(this, [err, data]);
+      }
 
-  intercepting_call.start(callProperties.metadata, last_listener);
-  intercepting_call.sendMessage(callProperties.argument);
-  intercepting_call.halfClose();
+      if (err) {
+        return reject(err);
+      }
+      resolve(data);
+    };
+
+    var intercepting_call = client_interceptors.getInterceptingCall(
+      methodDefinition,
+      callOptions,
+      interceptors,
+      callProperties.channel,
+      promise_callback
+    );
+
+    emitter.call = intercepting_call;
+
+    var last_listener = client_interceptors.getLastListener(
+      methodDefinition,
+      emitter,
+      promise_callback
+    );
+
+    intercepting_call.start(callProperties.metadata, last_listener);
+    intercepting_call.sendMessage(callProperties.argument);
+    intercepting_call.halfClose();
+  });
+
+  if (typeof callProperties.callback === "function") {
+    // avoid UnhandledPromiseRejectionWarning
+    promise.catch(() => {});
+  }
+
+  emitter.then = promise.then.bind(promise);
 
   return emitter;
 };
@@ -557,10 +620,15 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
  * @return {grpc~ClientWritableStream} An event emitter for stream related
  *     events
  */
-Client.prototype.makeClientStreamRequest = function(path, serialize,
-                                                    deserialize, metadata,
-                                                    options, callback) {
-  if (typeof options === 'function') {
+Client.prototype.makeClientStreamRequest = function(
+  path,
+  serialize,
+  deserialize,
+  metadata,
+  options,
+  callback
+) {
+  if (typeof options === "function") {
     callback = options;
     if (metadata instanceof Metadata) {
       options = {};
@@ -568,10 +636,18 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
       options = metadata;
       metadata = new Metadata();
     }
-  } else if (typeof metadata === 'function') {
+  } else if (typeof metadata === "function") {
     callback = metadata;
     metadata = new Metadata();
     options = {};
+  }
+  if (!callback && !options) {
+    if (metadata instanceof Metadata) {
+      options = {};
+    } else {
+      options = metadata;
+      metadata = new Metadata();
+    }
   }
   if (!metadata) {
     metadata = new Metadata();
@@ -579,19 +655,17 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
   if (!options) {
     options = {};
   }
-  if (!((metadata instanceof Metadata) &&
-       (options instanceof Object) &&
-       (typeof callback === 'function'))) {
-    throw new Error('Argument mismatch in makeClientStreamRequest');
+  if (!(metadata instanceof Metadata && options instanceof Object)) {
+    throw new Error("Argument mismatch in makeClientStreamRequest");
   }
 
-  var method_definition = options.method_definition = {
+  var method_definition = (options.method_definition = {
     path: path,
     requestStream: true,
     responseStream: false,
     requestSerialize: serialize,
     responseDeserialize: deserialize
-  };
+  });
 
   metadata = metadata.clone();
 
@@ -619,24 +693,45 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
     callOptions.interceptor_providers
   );
 
-  var intercepting_call = client_interceptors.getInterceptingCall(
-    methodDefinition,
-    callOptions,
-    interceptors,
-    callProperties.channel,
-    callProperties.callback
-  );
-
   var emitter = callProperties.call;
-  emitter.call = intercepting_call;
 
-  var last_listener = client_interceptors.getLastListener(
-    methodDefinition,
-    emitter,
-    callProperties.callback
-  );
+  var promise = new Promise((resolve, reject) => {
+    var promise_callback = function(err, data) {
+      if (typeof callProperties.callback === "function") {
+        callProperties.callback.apply(this, [err, data]);
+      }
 
-  intercepting_call.start(callProperties.metadata, last_listener);
+      if (err) {
+        return reject(err);
+      }
+      resolve(data);
+    };
+
+    var intercepting_call = client_interceptors.getInterceptingCall(
+      methodDefinition,
+      callOptions,
+      interceptors,
+      callProperties.channel,
+      promise_callback
+    );
+
+    emitter.call = intercepting_call;
+
+    var last_listener = client_interceptors.getLastListener(
+      methodDefinition,
+      emitter,
+      promise_callback
+    );
+
+    intercepting_call.start(callProperties.metadata, last_listener);
+  });
+
+  if (typeof callProperties.callback === "function") {
+    // avoid UnhandledPromiseRejectionWarning
+    promise.catch(() => {});
+  }
+
+  emitter.then = promise.then.bind(promise);
 
   return emitter;
 };
@@ -656,9 +751,14 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
  * @return {grpc~ClientReadableStream} An event emitter for stream related
  *     events
  */
-Client.prototype.makeServerStreamRequest = function(path, serialize,
-                                                    deserialize, argument,
-                                                    metadata, options) {
+Client.prototype.makeServerStreamRequest = function(
+  path,
+  serialize,
+  deserialize,
+  argument,
+  metadata,
+  options
+) {
   if (!(metadata instanceof Metadata)) {
     options = metadata;
     metadata = new Metadata();
@@ -666,17 +766,17 @@ Client.prototype.makeServerStreamRequest = function(path, serialize,
   if (!(options instanceof Object)) {
     options = {};
   }
-  if (!((metadata instanceof Metadata) && (options instanceof Object))) {
-    throw new Error('Argument mismatch in makeServerStreamRequest');
+  if (!(metadata instanceof Metadata && options instanceof Object)) {
+    throw new Error("Argument mismatch in makeServerStreamRequest");
   }
 
-  var method_definition = options.method_definition = {
+  var method_definition = (options.method_definition = {
     path: path,
     requestStream: false,
     responseStream: true,
     requestSerialize: serialize,
     responseDeserialize: deserialize
-  };
+  });
 
   metadata = metadata.clone();
 
@@ -686,7 +786,7 @@ Client.prototype.makeServerStreamRequest = function(path, serialize,
     call: new ClientReadableStream(),
     channel: this.$channel,
     methodDefinition: method_definition,
-    callOptions: options,
+    callOptions: options
   };
 
   // Transform call properties if specified.
@@ -736,9 +836,13 @@ Client.prototype.makeServerStreamRequest = function(path, serialize,
  * @param {grpc.Client~CallOptions=} options Options map
  * @return {grpc~ClientDuplexStream} An event emitter for stream related events
  */
-Client.prototype.makeBidiStreamRequest = function(path, serialize,
-                                                  deserialize, metadata,
-                                                  options) {
+Client.prototype.makeBidiStreamRequest = function(
+  path,
+  serialize,
+  deserialize,
+  metadata,
+  options
+) {
   if (!(metadata instanceof Metadata)) {
     options = metadata;
     metadata = new Metadata();
@@ -746,17 +850,17 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
   if (!(options instanceof Object)) {
     options = {};
   }
-  if (!((metadata instanceof Metadata) && (options instanceof Object))) {
-    throw new Error('Argument mismatch in makeBidiStreamRequest');
+  if (!(metadata instanceof Metadata && options instanceof Object)) {
+    throw new Error("Argument mismatch in makeBidiStreamRequest");
   }
 
-  var method_definition = options.method_definition = {
+  var method_definition = (options.method_definition = {
     path: path,
     requestStream: true,
     responseStream: true,
     requestSerialize: serialize,
     responseDeserialize: deserialize
-  };
+  });
 
   metadata = metadata.clone();
 
@@ -765,7 +869,7 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
     call: new ClientDuplexStream(),
     channel: this.$channel,
     methodDefinition: method_definition,
-    callOptions: options,
+    callOptions: options
   };
 
   // Transform call properties if specified.
@@ -782,7 +886,6 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
     callOptions.interceptors,
     callOptions.interceptor_providers
   );
-
 
   var emitter = callProperties.call;
   var intercepting_call = client_interceptors.getInterceptingCall(
@@ -832,25 +935,25 @@ Client.prototype.waitForReady = function(deadline, callback) {
   var self = this;
   var checkState = function(err) {
     if (err) {
-      callback(new Error('Failed to connect before the deadline'));
+      callback(new Error("Failed to connect before the deadline"));
       return;
     }
     var new_state;
     try {
       new_state = self.$channel.getConnectivityState(true);
     } catch (e) {
-      callback(new Error('The channel has been closed'));
+      callback(new Error("The channel has been closed"));
       return;
     }
     if (new_state === grpc.connectivityState.READY) {
       callback();
     } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {
-      callback(new Error('Failed to connect to server'));
+      callback(new Error("Failed to connect to server"));
     } else {
       try {
         self.$channel.watchConnectivityState(new_state, deadline, checkState);
       } catch (e) {
-        callback(new Error('The channel has been closed'));
+        callback(new Error("The channel has been closed"));
       }
     }
   };
@@ -886,21 +989,37 @@ function getDefaultValues(metadata, options) {
  */
 var deprecated_request_wrap = {
   [methodTypes.UNARY]: function(makeUnaryRequest) {
-    return function makeWrappedUnaryRequest(argument, callback,
-                                            metadata, options) {
+    return function makeWrappedUnaryRequest(
+      argument,
+      callback,
+      metadata,
+      options
+    ) {
       /* jshint validthis: true */
       var opt_args = getDefaultValues(metadata, options);
-      return makeUnaryRequest.call(this, argument, opt_args.metadata,
-                                   opt_args.options, callback);
+      return makeUnaryRequest.call(
+        this,
+        argument,
+        opt_args.metadata,
+        opt_args.options,
+        callback
+      );
     };
   },
   [methodTypes.CLIENT_STREAMING]: function(makeServerStreamRequest) {
-    return function makeWrappedClientStreamRequest(callback, metadata,
-                                                   options) {
+    return function makeWrappedClientStreamRequest(
+      callback,
+      metadata,
+      options
+    ) {
       /* jshint validthis: true */
       var opt_args = getDefaultValues(metadata, options);
-      return makeServerStreamRequest.call(this, opt_args.metadata,
-                                          opt_args.options, callback);
+      return makeServerStreamRequest.call(
+        this,
+        opt_args.metadata,
+        opt_args.options,
+        callback
+      );
     };
   },
   [methodTypes.SERVER_STREAMING]: x => x,
@@ -928,8 +1047,7 @@ var deprecated_request_wrap = {
  * @return {function} New client constructor, which is a subclass of
  *     {@link grpc.Client}, and has the same arguments as that constructor.
  */
-exports.makeClientConstructor = function(methods, serviceName,
-                                         class_options) {
+exports.makeClientConstructor = function(methods, serviceName, class_options) {
   if (!class_options) {
     class_options = {};
   }
@@ -944,19 +1062,22 @@ exports.makeClientConstructor = function(methods, serviceName,
 
   Object.keys(methods).forEach(name => {
     const attrs = methods[name];
-    if (name.indexOf('$') === 0) {
-      throw new Error('Method names cannot start with $');
+    if (name.indexOf("$") === 0) {
+      throw new Error("Method names cannot start with $");
     }
     var method_type = common.getMethodType(attrs);
     var method_func = function() {
-      return requester_funcs[method_type].apply(this,
-        [ attrs.path, attrs.requestSerialize, attrs.responseDeserialize ]
-        .concat([].slice.call(arguments))
+      return requester_funcs[method_type].apply(
+        this,
+        [attrs.path, attrs.requestSerialize, attrs.responseDeserialize].concat(
+          [].slice.call(arguments)
+        )
       );
     };
     if (class_options.deprecatedArgumentOrder) {
-      ServiceClient.prototype[name] =
-        deprecated_request_wrap[method_type](method_func);
+      ServiceClient.prototype[name] = deprecated_request_wrap[method_type](
+        method_func
+      );
     } else {
       ServiceClient.prototype[name] = method_func;
     }
@@ -992,13 +1113,12 @@ exports.getClientChannel = function(client) {
  * @returns {Object.<string, Interceptor[]>}
  */
 exports.getClientInterceptors = function(client) {
-  return Object.keys(client.$method_definitions)
-    .reduce((acc, key) => {
-      if (typeof key === 'string') {
-        acc[key] = client[key].interceptors;
-      }
-      return acc;
-    }, {});
+  return Object.keys(client.$method_definitions).reduce((acc, key) => {
+    if (typeof key === "string") {
+      acc[key] = client[key].interceptors;
+    }
+    return acc;
+  }, {});
 };
 
 /**
