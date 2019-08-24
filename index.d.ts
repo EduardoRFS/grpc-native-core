@@ -382,7 +382,7 @@ declare module "grpc" {
    * A stream that the server can read from. Used for calls that are streaming
    * from the client side.
    */
-  export class ServerReadableStream<RequestType> extends Readable {
+  export class ServerReadableStream<RequestType> extends Readable<RequestType> {
     /**
      * Indicates if the call has been cancelled
      */
@@ -418,7 +418,7 @@ declare module "grpc" {
    * A stream that the server can write to. Used for calls that are streaming
    * from the server side.
    */
-  export class ServerWritableStream<RequestType> extends Writable {
+  export class ServerWritableStream<RequestType> extends Writable<RequestType> {
     /**
      * Indicates if the call has been cancelled
      */
@@ -463,7 +463,7 @@ declare module "grpc" {
    * A stream that the server can read from or write to. Used for calls
    * with duplex streaming.
    */
-  export class ServerDuplexStream<RequestType, ResponseType> extends Duplex {
+  export class ServerDuplexStream<RequestType, ResponseType> extends Duplex<RequestType, ResponseType> {
     /**
      * Indicates if the call has been cancelled
      */
@@ -1251,7 +1251,7 @@ declare module "grpc" {
    * A stream that the client can read from. Used for calls that are streaming
    * from the server side.
    */
-  export class ClientReadableStream<ResponseType> extends Readable {
+  export class ClientReadableStream<ResponseType> extends Readable<ResponseType> {
     private constructor();
 
     /**
@@ -1271,7 +1271,7 @@ declare module "grpc" {
    * A stream that the client can write to. Used for calls that are streaming from
    * the client side.
    */
-  export class ClientWritableStream<RequestType> extends Writable {
+  export class ClientWritableStream<RequestType> extends Writable<RequestType> {
     private constructor();
 
     /**
@@ -1302,7 +1302,7 @@ declare module "grpc" {
    * A stream that the client can read from or write to. Used for calls with
    * duplex streaming.
    */
-  export class ClientDuplexStream<RequestType, ResponseType> extends Duplex {
+  export class ClientDuplexStream<RequestType, ResponseType> extends Duplex<RequestType, ResponseType> {
     private constructor();
 
     /**
